@@ -1,0 +1,25 @@
+{
+  "name": "2023",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run": "bun main.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cookie": "^0.6.0",
+    "lodash": "^4.17.21",
+    "luxon": "^3.4.4",
+    "minimist": "^1.2.8",
+    "node-fetch": "^3.3.2",
+    "prettier": "^3.1.0"
+  }
+}
