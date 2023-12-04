@@ -14,13 +14,21 @@ if (await toRun.exists()) {
   console.log("Running", `d${day}/p${part}.ts`);
   module = await import(`./d${day}/p${part}.ts`);
 } else {
-  part = "";
-  console.log("Running", `d${day}/p1.ts`);
-  module = await import(`./d${day}/p1.ts`);
+  part = 1;
+  console.log("Running", `d${day}/p${part}.ts`);
+  module = await import(`./d${day}/p${part}.ts`);
 }
 
-const example = readFileSync(`./d${day}/example${part}.txt`, {
-  encoding: "utf8",
-}).trim();
+let example;
+if (await Bun.file(`./d${day}/example${part}.txt`).exists()) {
+  example = readFileSync(`./d${day}/example${part}.txt`, {
+    encoding: "utf8",
+  }).trim();
+} else {
+  example = readFileSync(`./d${day}/example.txt`, {
+    encoding: "utf8",
+  }).trim();
+}
+
 const input = readFileSync(`./d${day}/input.txt`, { encoding: "utf8" }).trim();
 module.default(day, useExample ? example : input, example, input);
