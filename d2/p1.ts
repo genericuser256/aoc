@@ -23,7 +23,8 @@ function isPossible(line: string): { id: number; possible: boolean } {
   const pulls = rest.split(";");
   const possible = pulls.every((pull) => {
     return maxCounts.every(([c, num]) => {
-      count(pull, c) > num && console.log(id, pull, "--", c, num, count(pull, c));
+      count(pull, c) > num &&
+        console.log(id, pull, "--", c, num, count(pull, c));
       return count(pull, c) <= num;
     });
   });
@@ -34,20 +35,18 @@ function isPossible(line: string): { id: number; possible: boolean } {
 }
 
 function run(data: string) {
-  console.log(
-    sum(
-      data
-        .split("\n")
-        .map(isPossible)
-        .filter((x) => {
-          // console.log(x);
-          return x.possible;
-        })
-        .map((x) => x.id)
-    )
+  return sum(
+    data
+      .split("\n")
+      .map(isPossible)
+      .filter((x) => {
+        // console.log(x);
+        return x.possible;
+      })
+      .map((x) => x.id)
   );
 }
 
 export default (day: number, data: string, example: string, input: string) => {
-  run(data);
+  return run(data);
 };

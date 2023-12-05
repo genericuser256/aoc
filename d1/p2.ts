@@ -25,9 +25,9 @@ function getNumber(line: string): number {
 
 function run(data: string) {
   // console.log(data.split("\n").map(x => `${x}   ${getNumber(x)}`).join("\n"))
-  console.log(sum(data.split("\n").map(getNumber)));
+  return (sum(data.split("\n").map(getNumber)));
 }
 
 export default (day: number, data: string, example: string, input: string) => {
-  run(data);
+  return run(data);
 };

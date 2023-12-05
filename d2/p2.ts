@@ -32,20 +32,21 @@ function getMinForPulls(line: string): { id: number; power: number } {
       count(pull, c) <= num;
     });
   });
-  return { id, power: Object.values(maxes).reduce((prev, curr) => prev * curr, 1) };
+  return {
+    id,
+    power: Object.values(maxes).reduce((prev, curr) => prev * curr, 1),
+  };
 }
 
 function run(data: string) {
-  console.log(
-    sum(
-      data
-        .split("\n")
-        .map(getMinForPulls)
-        .map((x) => x.power)
-    )
+  return sum(
+    data
+      .split("\n")
+      .map(getMinForPulls)
+      .map((x) => x.power)
   );
 }
 
 export default (day: number, data: string, example: string, input: string) => {
-  run(data);
+  return run(data);
 };

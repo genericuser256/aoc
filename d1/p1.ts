@@ -7,9 +7,9 @@ function getNumber(line: string): number {
 }
 
 function run(data: string) {
-  console.log(sum(data.split("\n").map(getNumber)));
+  return sum(data.split("\n").map(getNumber));
 }
 
 export default (day: number, data: string, example: string, input: string) => {
-  run(input);
+  return run(input);
 };

@@ -6,7 +6,8 @@ const args = minimist(Bun.argv);
 
 const day = args.day || args.d || DateTime.now().day;
 let part = args.part || args.p || 2;
-const useExample = Boolean(args.example || args.e);
+const useExample =
+  Boolean(args.example || args.e) && !Boolean(args.input || args.i);
 
 const toRun = Bun.file(`./d${day}/p${part}.ts`);
 let module;
@@ -31,4 +32,4 @@ if (await Bun.file(`./d${day}/example${part}.txt`).exists()) {
 }
 
 const input = readFileSync(`./d${day}/input.txt`, { encoding: "utf8" }).trim();
-module.default(day, useExample ? example : input, example, input);
+console.log(module.default(day, useExample ? example : input, example, input));
