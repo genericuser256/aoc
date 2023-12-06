@@ -31,6 +31,26 @@ export function getSurrondingPoints(initialPt: Pt2d = { x: 0, y: 0 }): Pt2d[] {
   return ret;
 }
 
+export function between(
+  i: number,
+  a: number,
+  b: number,
+  inclusive = true
+): boolean {
+  const a2 = Math.min(a, b);
+  const b2 = Math.max(a, b);
+  if (inclusive) {
+    return i >= a2 && i <= b2;
+  } else {
+    return i > a2 && i < b2;
+  }
+}
+
+export interface Range {
+  start: number;
+  end: number;
+}
+
 export interface Pt2d {
   x: number;
   y: number;
