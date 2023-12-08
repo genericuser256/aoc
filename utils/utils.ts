@@ -46,6 +46,34 @@ export function between(
   }
 }
 
+export function gcd(arr: bigint[]) {
+  if (arr.length === 2) {
+    const [a, b] = arr;
+    if (a === 0n) {
+      return b;
+    }
+    return gcd([b % a, a]);
+  }
+
+  let result = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    result = gcd([arr[i], result]);
+    if (result === 1n) {
+      return result;
+    }
+  }
+  return result;
+}
+
+export function lcm(arr: number[]): bigint {
+  let result = BigInt(arr[0]);
+
+  for (let i = 1; i < arr.length; i++) {
+    result = (BigInt(arr[i]) * result) / gcd([BigInt(arr[i]), result]);
+  }
+  return result;
+}
+
 export interface Range {
   start: number;
   end: number;

@@ -1,5 +1,5 @@
 import { min, sortBy, sum, uniq } from "lodash";
-import { between, multAcc } from "../utils/utils";
+import { between, lcm, multAcc } from "../utils/utils";
 
 function parse(data: string): {
   steps: Array<0 | 1>;
@@ -23,23 +23,31 @@ function parse(data: string): {
 }
 
 function done(keys: string[]): boolean {
-  return keys.every(k => k.endsWith("Z"))
+  return keys.every((k) => k.endsWith("Z"));
 }
 
-function run(data: string) {
-  const { steps, graph } = parse(data);
-
-  let keys = Object.keys(graph).filter(x => x.endsWith('A'));
+function getLength(
+  start: string,
+  steps: Array<0 | 1>,
+  graph: Record<string, [string, string]>
+): number {
+  let k = start;
   let i = 0;
   let count = 0;
-  while (!done(keys)) {
+  while (!k.endsWith("Z")) {
     count++;
-    keys = keys.map((k) => graph[k][steps[i]])
-    // console.log(keys);
+    k = graph[k][steps[i]];
     i = (i + 1) % steps.length;
   }
 
   return count;
+}
+
+function run(data: string) {
+  const { steps, graph } = parse(data);
+  let keys = Object.keys(graph).filter((x) => x.endsWith("A"));
+  let lengths = keys.map((k) => getLength(k, steps, graph));
+  return lcm(lengths);
 }
 
 export default (day: number, data: string, example: string, input: string) => {

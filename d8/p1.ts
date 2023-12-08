@@ -22,9 +22,10 @@ function parse(data: string): {
   };
 }
 
-function run(data: string) {
-  const { steps, graph } = parse(data);
-
+function getLength(
+  steps: Array<0 | 1>,
+  graph: Record<string, [string, string]>
+): number {
   let k = "AAA";
   let i = 0;
   let count = 0;
@@ -35,6 +36,11 @@ function run(data: string) {
   }
 
   return count;
+}
+
+function run(data: string) {
+  const { steps, graph } = parse(data);
+  return getLength(steps, graph)
 }
 
 export default (day: number, data: string, example: string, input: string) => {
