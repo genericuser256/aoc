@@ -9,6 +9,11 @@ export function isNum(val: any): boolean {
   return !isNaN(parseFloat(val));
 }
 
+type Falsy = false | 0 | "" | null | undefined;
+export function ty<T>(val: T | Falsy): val is T {
+  return Boolean(val)
+}
+
 export function valueAt<T>(arr: T[][], loc: Pt2d): T | undefined {
   return arr[loc.y] ? arr[loc.y][loc.x] : undefined;
 }
@@ -21,14 +26,33 @@ export function generateRange(start: number, end: number): number[] {
   return ret;
 }
 
-export function getSurrondingPoints(initialPt: Pt2d = { x: 0, y: 0 }): Pt2d[] {
+export function getSurrondingPoints(
+  initialPt: Pt2d = { x: 0, y: 0 },
+  grid: unknown[][] | undefined = undefined
+): Pt2d[] {
   const ret: Pt2d[] = [];
   for (let y = -1; y < 2; y++) {
     for (let x = -1; x < 2; x++) {
+      if (x === 0 && y === 0) {
+        continue;
+      }
       ret.push({ x: x + initialPt.x, y: y + initialPt.y });
     }
   }
-  return ret;
+  return grid ? ret.filter((p) => grid.ptAt(p)) : ret;
+}
+
+export function getSurrondingPointsOrth(
+  initialPt: Pt2d = { x: 0, y: 0 },
+  grid: unknown[][] | undefined = undefined
+): Pt2d[] {
+  const ret = [
+    { x: initialPt.x - 1, y: initialPt.y },
+    { x: initialPt.x + 1, y: initialPt.y },
+    { x: initialPt.x, y: initialPt.y - 1 },
+    { x: initialPt.x, y: initialPt.y + 1 },
+  ];
+  return grid ? ret.filter((p) => grid.ptAt(p)) : ret;
 }
 
 export function between(
@@ -82,4 +106,8 @@ export interface Range {
 export interface Pt2d {
   x: number;
   y: number;
+}
+
+export function str(x: Pt2d): string {
+  return `${x.x},${x.y}`
 }
