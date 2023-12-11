@@ -2,6 +2,8 @@ import { readFileSync } from "fs";
 import { DateTime } from "luxon";
 import minimist from "minimist";
 
+import "./utils/init";
+
 const args = minimist(Bun.argv);
 
 const day = args.day || args.d || DateTime.now().day;
