@@ -21,7 +21,9 @@ function parse(data: string): Array<{ line: string; damaged: number[] }> {
   return data.split("\n").map((l) => {
     const [lineStr, damagedStr] = l.split(" ");
     return {
-      line: lineStr,
+      line: generateRange(0, 4)
+        .map((x) => lineStr)
+        .join("?"),
       damaged: damagedStr.split(",").map((x) => parseInt(x)),
     };
   });
@@ -52,107 +54,37 @@ function getFits(group: string, size: number): number[] {
   return ret;
 }
 
-function countArrangementsInt(
-  line: string,
-  groups: string[],
-  damaged: number[]
-): number {
-  if (groups.length === 0 && damaged.length) {
-    throw "bad";
-  }
+function findFits(line: string, size: number): number[] {
+  const splitLine = line.split("");
+  const n = line.length;
+  const ret: number[] = [];
+  splitLine.forEach((c, i) => {
+    if (n - i < size) {
+      return;
+    }
 
-  if (damaged.length === 0) {
-    return 0;
-  }
-
-  if (damaged.length === 1 && groups.length === 1) {
-    return getFits(groups[0], damaged[0]).length;
-  }
-
-  let count = 0;
-  groups.forEach((group, i) => {
-    const fits = getFits(group, damaged[0]);
-    fits.forEach((fitI) => {
-      try {
-        count += countArrangementsInt(
-          line,
-          [group.substring(fitI + damaged[0]), ...groups.slice(i + 1)].filter(
-            Boolean
-          ),
-          damaged.slice(1)
-        );
-      } catch {
-        // pass
-      }
-    });
+    if (
+      (i === 0 || splitLine[i - 1] === "?") &&
+      (i + size === n || splitLine[i + size] === "?")
+    ) {
+      ret.push(i);
+    }
   });
-  return count;
+  return ret;
 }
 
-function permute(line: string): string[] {
-  return line.split("").reduce((acc, curr, i) => {
-    if (i === 0) {
-      if (curr === "?") {
-        return [".", "#"];
-      }
-      return [curr];
-    }
-    if (curr === "?") {
-      return [...acc.map((x) => `${x}.`), ...acc.map((x) => `${x}#`)];
-    }
-    return acc.map((x) => `${x}${curr}`);
-  }, [] as string[]);
-}
+function countArrangements(line: string, damaged: number[]): number {
+  const placing = damaged[0];
+  const fits = findFits(line, placing);
+  if (damaged.length === 1) {
+    return fits.length;
+  }
 
-function countArrangements(line: string, damaged: number[]) {
-  const res = damaged.map((x) => getRegex(x));
-  const re = new RegExp(`^[^#]*${res.join("[^#]\\.*")}[^#]*$`, "g");
-  // console.log(
-  //   line,
-  //   re.source,
-  //   "\n",
-  //   permute(line).join("\n"),
-  //   "\n",
-  //   new Set(
-  //     permute(line)
-  //       .flatMap((x) => [...x.matchAll(re)])
-  //       .flatMap((x) => x)
-  //   )
-  // );
-  return [
-    ...new Set(
-      permute(line)
-        .flatMap((x) => [...x.matchAll(re)])
-        .flatMap((x) => x)
-    ),
-  ].length;
-  const re1 = res
-    .reduce((acc, curr, i) => {
-      if (i === 0) {
-        return [`${curr}`, `\\.${curr}`, `\\?${curr}`];
-        // return acc.map(x => `${x}${curr}`)
-      }
-      return [
-        ...acc.map((x) => `${x}[^#]*\\.${curr}`),
-        ...acc.map((x) => `${x}[^#]*\\?${curr}`),
-      ];
-    }, [] as string[])
-    // .peek((x) => console.log(x))
-    .map((x) => new RegExp(x, "g"));
-
-  //new RegExp(res.map((x, i) => i === 0 ? x : `[^#]${x}`).join(".*"), "g");
-  const re2 = new RegExp(
-    res.map((x, i) => (i === 0 ? x : `\\.${x}`)).join(".*"),
-    "g"
+  return sum(
+    fits.map((fit) =>
+      countArrangements(line.substring(fit + 1), damaged.slice(1))
+    )
   );
-  // console.log(re1.source)
-  // // const splitLine = line.split("");
-  // // const possibleIndices = splitLine
-  // //   .map((c, i) => (c !== "." ? i : undefined))
-  // //   .filter((x) => x !== undefined);
-  // return [...line.matchAll(re1)].flatMap(x => x);
-  // re1.map((x) => console.log(x, [...line.matchAll(x)]));
-  return re1.map((x) => x.test(line)).filter(Boolean).length;
 }
 
 function run(data: string) {
