@@ -11,11 +11,15 @@ export function isNum(val: any): boolean {
 
 type Falsy = false | 0 | "" | null | undefined;
 export function ty<T>(val: T | Falsy): val is T {
-  return Boolean(val)
+  return Boolean(val);
 }
 
 export function valueAt<T>(arr: T[][], loc: Pt2d): T | undefined {
   return arr[loc.y] ? arr[loc.y][loc.x] : undefined;
+}
+
+export function repeat<T>(size: number, value: T): T[] {
+  return generateRange(1, size).map((x) => value);
 }
 
 export function generateRange(start: number, end: number): number[] {
@@ -109,5 +113,5 @@ export interface Pt2d {
 }
 
 export function str(x: Pt2d): string {
-  return `${x.x},${x.y}`
+  return `${x.x},${x.y}`;
 }
