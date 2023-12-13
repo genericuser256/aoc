@@ -6,6 +6,7 @@ import {
   getSurrondingPoints,
   getSurrondingPointsOrth,
   multAcc,
+  repeat,
   str,
   ty,
   valueAt,
@@ -21,10 +22,11 @@ function parse(data: string): Array<{ line: string; damaged: number[] }> {
   return data.split("\n").map((l) => {
     const [lineStr, damagedStr] = l.split(" ");
     return {
-      line: generateRange(0, 4)
-        .map((x) => lineStr)
-        .join("?"),
-      damaged: damagedStr.split(",").map((x) => parseInt(x)),
+      line: repeat(5, lineStr).join("?"),
+      damaged: repeat(5, damagedStr)
+        .join(",")
+        .split(",")
+        .map((x) => parseInt(x)),
     };
   });
 }
@@ -55,42 +57,167 @@ function getFits(group: string, size: number): number[] {
 }
 
 function findFits(line: string, size: number): number[] {
-  const splitLine = line.split("");
   const n = line.length;
   const ret: number[] = [];
-  splitLine.forEach((c, i) => {
-    if (n - i < size) {
-      return;
+  for (let i = 0; i < n; i++) {
+    const substr = line.substring(i, i + size);
+    const re = new RegExp(getRegex(size));
+    // substr === "###" && console.log(re.source, re.test(substr), i, size, n)
+    if (re.test(substr)) {
+      if (
+        (i === 0 || (i !== 0 && line[i - 1] !== "#")) &&
+        (i + size === n || (i + size <= n - 1 && line[i + size] !== "#"))
+      ) {
+        ret.push(i);
+      }
     }
-
-    if (
-      (i === 0 || splitLine[i - 1] === "?") &&
-      (i + size === n || splitLine[i + size] === "?")
-    ) {
-      ret.push(i);
-    }
-  });
+  }
   return ret;
+}
+
+function findFitsEnd(line: string, size: number): number[] {
+  const n = line.length;
+  const ret: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const substr = line.substring(i, i + size);
+    const re = new RegExp(getRegex(size));
+    // substr === "###" && console.log(re.source, re.test(substr), i, size, n)
+    if (re.test(substr)) {
+      if (
+        !line.substring(0, i).includes("#") &&
+        !line.substring(i + size).includes("#")
+      ) {
+        ret.push(i);
+      }
+    }
+  }
+  return ret;
+}
+
+function countArrangements2(line: string, damaged: number[]): string[] {
+  if (sum(damaged) + damaged.length - 1 > line.length) {
+    return [];
+  }
+  const placing = damaged[0];
+  if (damaged.length === 1) {
+    const fits = findFitsEnd(line, placing);
+    return fits
+      .map((i) => {
+        const x = line.replaceAll("?", ".").split("");
+        x.splice(i, placing, ...repeat(placing, "#"));
+        return x.join("");
+      })
+      .filter((x) => [...x.matchAll(/#+/g)].length === 1);
+  }
+
+  const fits = findFits(line, placing);
+  const res = damaged.map((x) => getRegex(x));
+  const re = new RegExp(`^[^#]*${res.join("[^#]\\.*")}[^#]*$`, "");
+  return fits.flatMap((fit) =>
+    countArrangements2(line.substring(fit + placing + 1), damaged.slice(1))
+      .map(
+        (x) =>
+          line.replaceAll("?", ".").substring(0, fit) +
+          repeat(placing, "#").join("") +
+          "." +
+          x
+      )
+      .filter((x) => re.test(x))
+  );
 }
 
 function countArrangements(line: string, damaged: number[]): number {
   const placing = damaged[0];
-  const fits = findFits(line, placing);
   if (damaged.length === 1) {
-    return fits.length;
+    const fits = findFits(line, placing);
+    // return fits.length;
+    return fits
+      .map((i) => {
+        const x = line.replaceAll("?", ".").split("");
+        x.splice(i, placing, ...repeat(placing, "#"));
+        return x.join("");
+      })
+      .filter((x) => [...x.matchAll(/#+/g)].length === 1).length;
   }
 
+  const fits = findFits(line, placing);
   return sum(
     fits.map((fit) =>
-      countArrangements(line.substring(fit + 1), damaged.slice(1))
+      countArrangements(line.substring(fit + placing + 1), damaged.slice(1))
     )
   );
 }
 
+function permute(line: string): string[] {
+  return line.split("").reduce((acc, curr, i) => {
+    if (i === 0) {
+      if (curr === "?") {
+        return [".", "#"];
+      }
+      return [curr];
+    }
+    if (curr === "?") {
+      return [...acc.map((x) => `${x}.`), ...acc.map((x) => `${x}#`)];
+    }
+    return acc.map((x) => `${x}${curr}`);
+  }, [] as string[]);
+}
+
+function countArrangements3(line: string, damaged: number[]) {
+  const res = damaged.map((x) => getRegex(x));
+  const re = new RegExp(`^[^#]*${res.join("[^#]\\.*")}[^#]*$`, "g");
+  // console.log(
+  //   line,
+  //   re.source,
+  //   "\n",
+  //   permute(line).join("\n"),
+  //   "\n",
+  //   new Set(
+  //     permute(line)
+  //       .flatMap((x) => [...x.matchAll(re)])
+  //       .flatMap((x) => x)
+  //   )
+  // );
+  return [
+    ...new Set(
+      permute(line)
+        .flatMap((x) => [...x.matchAll(re)])
+        .flatMap((x) => x)
+    ),
+  ];
+}
+
 function run(data: string) {
   const parsedData = parse(data);
+  const t =
+    "?#??.??##??????????#??.??##??????????#??.??##??????????#??.??##??????????#??.??##????????";
+  const s = [4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3];
+  const res = s.map((x) => getRegex(x));
+  const re = new RegExp(`^[^#]*${res.join("[^#]\\.*")}[^#]*$`, "");
+  // console.log(re.source);
+  console.log(
+    countArrangements2(t, s)
+      .map((x) => [x, re.test(x)])
+      .join("\n")
+  );
+  // console.log();
+  // console.log(countArrangements3(t, s).join("\n"));
+  // [...new Set(permute(t))].map(x =>/^\.*#{3}\.+#{3}\.+#\.+#\.+#\.+$/.test(x) && console.log(x, /#{3}\.+#{3}\.+#\.+#\.+#/.test(x)))
+  return;
   return sum(
-    parsedData.map(({ line, damaged }) => countArrangements(line, damaged))
+    parsedData.map(({ line, damaged }, i) => {
+      const res = damaged.map((x) => getRegex(x));
+      const re = new RegExp(`^[^#]*${res.join("[^#]\\.*")}[^#]*$`, "");
+
+      console.log(line, damaged);
+      const x = countArrangements2(line, damaged); //.filter((y) => re.test(y));
+      // const x2 = countArrangements3(line, damaged);
+      // // console.log(re.source)
+      // x.length !== x2.length &&
+      //   console.log(line, damaged.join(","), "total", x, x2.length, "\n");
+      console.log(`${(i / parsedData.length) * 100}%`);
+      return x.length;
+    })
   );
 }
 
