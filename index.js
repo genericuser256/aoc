@@ -34,4 +34,4 @@ if (await Bun.file(`./d${day}/example${part}.txt`).exists()) {
 }
 
 const input = readFileSync(`./d${day}/input.txt`, { encoding: "utf8" }).trim();
-console.log(module.default(day, useExample ? example : input, example, input));
+console.log("Result:", module.default(day, useExample ? example : input, example, input));

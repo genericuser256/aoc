@@ -1,3 +1,5 @@
+import { zip } from "lodash";
+
 export function strReverse(str: any): string {
   return `${str}`.split("").reverse().join("");
 }
@@ -20,6 +22,10 @@ export function valueAt<T>(arr: T[][], loc: Pt2d): T | undefined {
 
 export function repeat<T>(size: number, value: T): T[] {
   return generateRange(1, size).map((x) => value);
+}
+
+export function transpose<T>(matrix: T[][]): T[][] {
+  return zip(...matrix) as any as T[][];
 }
 
 export function generateRange(start: number, end: number): number[] {
