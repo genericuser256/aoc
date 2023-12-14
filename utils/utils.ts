@@ -108,6 +108,28 @@ export function lcm(arr: number[]): bigint {
   return result;
 }
 
+export function isIn(grid: unknown[][], pt: Pt2d): boolean {
+  return pt.y >= 0 && pt.y < grid.length && pt.x >= 0 && pt.x < grid[0].length;
+}
+
+export function printGrid(grid: unknown[][]): string {
+  return grid.map(x => x.join("")).join("\n")
+}
+
+export function addPts(a: Pt2d, b: Pt2d): Pt2d {
+  return {
+    x: a.x + b.x,
+    y: a.y + b.y
+  }
+}
+
+export function subPts(a: Pt2d, b: Pt2d): Pt2d {
+  return {
+    x: a.x - b.x,
+    y: a.y - b.y
+  }
+}
+
 export interface Range {
   start: number;
   end: number;
