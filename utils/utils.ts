@@ -1,4 +1,4 @@
-import { zip } from "lodash";
+import { cloneDeep, zip } from "lodash";
 
 export function strReverse(str: any): string {
   return `${str}`.split("").reverse().join("");
@@ -21,7 +21,7 @@ export function valueAt<T>(arr: T[][], loc: Pt2d): T | undefined {
 }
 
 export function repeat<T>(size: number, value: T): T[] {
-  return generateRange(1, size).map((x) => value);
+  return generateRange(1, size).map((x) => cloneDeep(value));
 }
 
 export function transpose<T>(matrix: T[][]): T[][] {
