@@ -20,7 +20,7 @@ import {
   multAcc,
   printGrid,
   repeat,
-  str,
+  stringify,
   transpose,
   ty,
   valueAt,

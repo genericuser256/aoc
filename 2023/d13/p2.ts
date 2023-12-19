@@ -18,7 +18,7 @@ import {
   isNum,
   multAcc,
   repeat,
-  str,
+  stringify,
   transpose,
   ty,
   valueAt,

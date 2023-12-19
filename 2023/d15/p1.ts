@@ -17,7 +17,7 @@ import {
   getSurrondingPointsOrth,
   multAcc,
   repeat,
-  str,
+  stringify,
   transpose,
   ty,
   valueAt,

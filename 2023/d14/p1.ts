@@ -20,7 +20,7 @@ import {
   multAcc,
   printGrid,
   repeat,
-  str,
+  stringify,
   transpose,
   ty,
   valueAt,
@@ -68,7 +68,7 @@ function tilt(board: Board, dir: Pt2d): Board {
             }
             // console.log(x, y);
             // console.log(printGrid(newBoard));
-            m.push(`${str({ x, y })}->${str(pt)}`);
+            m.push(`${stringify({ x, y })}->${stringify(pt)}`);
           }
         }
       }

@@ -5,7 +5,7 @@ import {
   getSurrondingPoints,
   getSurrondingPointsOrth,
   multAcc,
-  str,
+  stringify,
   ty,
   valueAt,
 } from "../utils/utils";

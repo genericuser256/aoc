@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "bun main.ts"
   },
   "author": "",
   "license": "ISC",

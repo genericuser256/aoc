@@ -5,7 +5,7 @@ import {
   getSurrondingPoints,
   getSurrondingPointsOrth,
   multAcc,
-  str,
+  stringify,
   valueAt,
 } from "../utils/utils";
 
@@ -64,7 +64,7 @@ function canMoveTo(grid: Array<Tile[]>, from: Pt2d, to: Pt2d): boolean {
 
   from.x === 90 &&
     from.y === 69 &&
-    console.log(`${str(from)} ${str(to)} ${fat} ${tat}`);
+    console.log(`${stringify(from)} ${stringify(to)} ${fat} ${tat}`);
 
   if (to.y === from.y) {
     const s = from.x < to.x ? `${fat}${tat}` : `${tat}${fat}`;

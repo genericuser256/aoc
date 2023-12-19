@@ -140,6 +140,6 @@ export interface Pt2d {
   y: number;
 }
 
-export function str(x: Pt2d): string {
+export function stringify(x: Pt2d): string {
   return `${x.x},${x.y}`;
 }
