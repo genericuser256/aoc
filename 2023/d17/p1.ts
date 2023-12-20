@@ -1,5 +1,33 @@
-import { Pt2d, stringify } from "./utils";
-import { isEqual } from "lodash";
+import {
+  cloneDeep,
+  first,
+  isEqual,
+  last,
+  max,
+  maxBy,
+  min,
+  sortBy,
+  sum,
+  uniq,
+} from "lodash";
+import {
+  Pt2d,
+  addPts,
+  between,
+  dirToStr,
+  generateRange,
+  getSurrondingPoints,
+  getSurrondingPointsOrth,
+  isIn,
+  mannhattan,
+  multAcc,
+  repeat,
+  stringify,
+  subPts,
+  transpose,
+  ty,
+  valueAt,
+} from "../utils/utils";
 
 class MinHeap<T> {
   heap: T[];
@@ -120,7 +148,7 @@ class MinHeap<T> {
   }
 }
 
-export function reconstruct_path(cameFrom: Map<string, Pt2d>, current: Pt2d) {
+function reconstruct_path(cameFrom: Map<string, Pt2d>, current: Pt2d) {
   // total_path := {current}
   // while current in cameFrom.Keys:
   //     current := cameFrom[current]
@@ -134,9 +162,25 @@ export function reconstruct_path(cameFrom: Map<string, Pt2d>, current: Pt2d) {
   return totalPath;
 }
 
+function last2InLine(cameFrom: Map<string, Pt2d>, current: Pt2d): boolean {
+
+  let i =0;
+  let next = cameFrom.get(stringify(current))!;
+  let lastDir = stringify(subPts(current, next));
+  while (cameFrom.has(stringify(current)) && i < 2) {
+    const dir = stringify(subPts(current, next));
+    if (dir === lastDir) {
+
+    }
+    current = next;
+    i++;
+  }
+return false;
+}
+
 // A* finds a path from start to goal.
 // h is the heuristic function. h(n) estimates the cost to reach goal from node n.
-export function aStar<T>(
+function aStar<T>(
   grid: T[][],
   start: Pt2d,
   goal: Pt2d,
@@ -182,6 +226,8 @@ export function aStar<T>(
 
     const neighbours = getNeighbours(current.v);
     neighbours.forEach((neighbour) => {
+      const dir = subPts(current.v, neighbour);
+
       // d(current,neighbor) is the weight of the edge from current to neighbor
       // tentative_gScore is the distance from start to the neighbor through current
       // tentative_gScore := gScore[current] + d(current, neighbor)
@@ -205,3 +251,104 @@ export function aStar<T>(
   // Open set is empty but goal was never reached
   throw "not found";
 }
+
+
+type Tile = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+const seenPts = new Set<string>();
+const followed = new Set<string>();
+
+function parseData(data: string) {
+  return data
+    .split("\n")
+    .map((x) => x.split("").map((x) => parseInt(x))) as any as Tile[][];
+}
+
+function followPath(
+  grid: Tile[][],
+  pt: Pt2d,
+  dir: Pt2d,
+  cost = 0,
+  length = 0
+): [number, string[]] {
+  const fkey = `${stringify(pt)}-${stringify(dir)}`;
+  const key = stringify(pt);
+  const v: Tile = grid.ptAt(pt);
+  // console.log(v, key);
+  if (pt.x === grid[0].length - 1 && pt.y === grid.length - 1) {
+    // console.log("hi", cost, v);
+    return [cost + v, [key]];
+  }
+
+  if (followed.has(fkey) || !isIn(grid, pt)) {
+    return [Infinity, []];
+  }
+
+  seenPts.add(stringify(pt));
+  followed.add(fkey);
+
+  const [straight, straightPath] =
+    length < 2
+      ? followPath(grid, addPts(pt, dir), dir, cost + v, length + 1)
+      : [Infinity, []];
+  let newDir = dir.x ? { x: 0, y: -1 } : { x: -1, y: 0 };
+  const [left, leftPath] = followPath(
+    grid,
+    addPts(pt, newDir),
+    newDir,
+    cost + v
+  );
+  newDir = dir.x ? { x: 0, y: 1 } : { x: 1, y: 0 };
+  const [right, rightPath] = followPath(
+    grid,
+    addPts(pt, newDir),
+    newDir,
+    cost + v
+  );
+  if (straight === left && straight === right && straight === Infinity) {
+    return [Infinity, []];
+  }
+
+  // console.log(
+  //   straight !== Infinity ? straight : "",
+  //   left !== Infinity ? left : "",
+  //   right !== Infinity ? right : ""
+  // );
+  if (straight <= left && straight <= right) {
+    // console.log("s", length, key, dirToStr(dir));
+    return [straight, [key, ...straightPath]];
+  }
+  if (left <= straight && left <= right) {
+    // console.log("l", length, key, dirToStr(dir));
+    return [left, [key, ...leftPath]];
+  }
+  if (right <= left && right <= straight) {
+    // console.log("r", length, key, dirToStr(dir));
+    return [right, [key, ...rightPath]];
+  }
+  throw "no no no";
+}
+
+function run(input: string) {
+  const data = parseData(input);
+  const n = data.length;
+  const m = data[0].length;
+  const goal = { x: m - 1, y: n - 1 };
+  const res = aStar(
+    data,
+    { x: 0, y: 0 },
+    goal,
+    (a) => 5 * mannhattan(a, goal),
+    (a, b) => data.ptAt(a),
+    (pt) => getSurrondingPointsOrth(pt, data)
+  );
+
+  return res;
+  const [x, y] = followPath(data, { x: 0, y: 0 }, { x: 1, y: 0 });
+  console.log(y.join("\n"));
+  return x;
+}
+
+export default (day: number, data: string, example: string, input: string) => {
+  return run(data);
+};

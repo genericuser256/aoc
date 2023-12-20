@@ -130,6 +130,10 @@ export function subPts(a: Pt2d, b: Pt2d): Pt2d {
   }
 }
 
+export function mannhattan(a: Pt2d, b: Pt2d): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
 export interface Range {
   start: number;
   end: number;
@@ -142,4 +146,17 @@ export interface Pt2d {
 
 export function stringify(x: Pt2d): string {
   return `${x.x},${x.y}`;
+}
+
+export function dirToStr(dir: Pt2d): string {
+  if (dir.x > 0) {
+    return ">";
+  }
+  if (dir.x < 0) {
+    return "<";
+  }
+  if (dir.y > 0) {
+    return "U";
+  }
+  return "^"
 }
