@@ -36,6 +36,45 @@ export function generateRange(start: number, end: number): number[] {
   return ret;
 }
 
+export function getDim(grid: unknown[][]): Pt2d {
+  return {
+    x: grid[0].length - 1,
+    y: grid.length - 1,
+  };
+}
+
+export function printGrid(grid: any[][], log = true): string {
+  let str: string = grid.map((row) => row.join(" ")).join("\n");
+  if (typeof grid[0][0] === "number") {
+    const tGrid = grid as number[][];
+    const maxDigits = Math.max(
+      ...tGrid.flatMap((row) =>
+        row.map((x) => (x === Infinity ? 1 : `${x}`.length))
+      )
+    );
+    const formatter = Intl.NumberFormat(undefined, {
+      minimumIntegerDigits: maxDigits,
+    });
+    str = tGrid
+      .map((row) =>
+        row
+          .map((x) =>
+            x === Infinity
+              ? repeat(maxDigits, "-").join("")
+              : formatter.format(x)
+          )
+          .join(" ")
+      )
+      .join("\n");
+  }
+
+  if (log) {
+    console.log(str);
+  }
+
+  return str;
+}
+
 export function getSurrondingPoints(
   initialPt: Pt2d = { x: 0, y: 0 },
   grid: unknown[][] | undefined = undefined
@@ -112,22 +151,18 @@ export function isIn(grid: unknown[][], pt: Pt2d): boolean {
   return pt.y >= 0 && pt.y < grid.length && pt.x >= 0 && pt.x < grid[0].length;
 }
 
-export function printGrid(grid: unknown[][]): string {
-  return grid.map(x => x.join("")).join("\n")
-}
-
 export function addPts(a: Pt2d, b: Pt2d): Pt2d {
   return {
     x: a.x + b.x,
-    y: a.y + b.y
-  }
+    y: a.y + b.y,
+  };
 }
 
 export function subPts(a: Pt2d, b: Pt2d): Pt2d {
   return {
     x: a.x - b.x,
-    y: a.y - b.y
-  }
+    y: a.y - b.y,
+  };
 }
 
 export function mannhattan(a: Pt2d, b: Pt2d): number {
@@ -158,5 +193,5 @@ export function dirToStr(dir: Pt2d): string {
   if (dir.y > 0) {
     return "U";
   }
-  return "^"
+  return "^";
 }

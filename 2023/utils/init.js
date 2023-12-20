@@ -12,7 +12,7 @@ Array.prototype.ptAt = function (pt) {
 };
 Array.prototype.setAt = function (pt, value) {
   if (!this[pt.y]) {
-    throw `${pt} not in ${this.join(",")}`;
+    throw `${JSON.stringify(pt)} not in ${this.join(",")}`;
   }
   this[pt.y][pt.x] = value;
 };
