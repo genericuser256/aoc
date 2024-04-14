@@ -9,3 +9,11 @@ export const numStrs = [
   "eight",
   "nine",
 ];
+
+export const midDot = "·";
+
+export type T_rlTurns = "R" | "L" | "D" | "U";
+
+export type T_arrowTurns = ">" | "<" | "V" | "^";
+
+export type T_cardinalTurns = "E" | "W" | "S" | "N";

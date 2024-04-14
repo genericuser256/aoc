@@ -43,8 +43,14 @@ export function getDim(grid: unknown[][]): Pt2d {
   };
 }
 
-export function printGrid(grid: any[][], log = true): string {
-  let str: string = grid.map((row) => row.join(" ")).join("\n");
+export function printGrid(
+  grid: any[][],
+  opts: { log?: boolean; space?: boolean } = {}
+): string {
+  opts = { ...{ log: true, space: true }, ...opts };
+  let str: string = grid
+    .map((row) => row.join(opts.space ? " " : ""))
+    .join("\n");
   if (typeof grid[0][0] === "number") {
     const tGrid = grid as number[][];
     const maxDigits = Math.max(
@@ -63,12 +69,13 @@ export function printGrid(grid: any[][], log = true): string {
               ? repeat(maxDigits, "-").join("")
               : formatter.format(x)
           )
-          .join(" ")
+          .join(opts.space ? " " : "")
       )
       .join("\n");
   }
 
-  if (log) {
+  if (opts.log) {
+    console.log();
     console.log(str);
   }
 
@@ -165,6 +172,19 @@ export function subPts(a: Pt2d, b: Pt2d): Pt2d {
   };
 }
 
+export function multPts(a: Pt2d, b: Pt2d | number): Pt2d {
+  if (typeof b === "number") {
+    return {
+      x: a.x * b,
+      y: a.y * b,
+    };
+  }
+  return {
+    x: a.x * b.x,
+    y: a.y * b.y,
+  };
+}
+
 export function mannhattan(a: Pt2d, b: Pt2d): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
@@ -194,4 +214,20 @@ export function dirToStr(dir: Pt2d): string {
     return "U";
   }
   return "^";
+}
+
+export function strToDir(str: string): Pt2d {
+  if ([">", "R", "E"].includes(str)) {
+    return { x: 1, y: 0 };
+  }
+  if (["<", "L", "W"].includes(str)) {
+    return { x: -1, y: 0 };
+  }
+  if (["V", "D", "S"].includes(str)) {
+    return { x: 0, y: 1 };
+  }
+  if (["^", "U", "N"].includes(str)) {
+    return { x: 0, y: -1 };
+  }
+  throw `${str} dunno`;
 }
