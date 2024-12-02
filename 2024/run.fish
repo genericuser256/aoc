@@ -15,7 +15,7 @@ end
 echo "Running day $day part $part with input $useInput"
 
 if contains $useInput i t 1 true
-    dotnet fsi "$day/$day""p$part.fsx" -- "$day/input.txt"
+    dotnet fsi "$day/p$part.fsx" -- "$day/input.txt"
 else
-    dotnet fsi "$day/$day""p$part.fsx" -- "$day/example.txt"
+    dotnet fsi "$day/p$part.fsx" -- "$day/example.txt"
 end
