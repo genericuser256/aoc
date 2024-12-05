@@ -3,8 +3,27 @@ module utils
 open System.IO
 
 let countOccurrences (arr: 'T[]) =
-    // Group the array elements, count occurrences, and put them into a sequence of key-value pairs
     arr
-    |> Seq.groupBy id // Group by the number itself
-    |> Seq.map (fun (key, values) -> key, Seq.length values) // Create tuples (number, count)
-    |> Map.ofSeq // Convert the sequence to a Map
+    |> Seq.groupBy id
+    |> Seq.map (fun (key, values) -> key, Seq.length values)
+    |> Map.ofSeq
+
+let rec insertAtEveryPosition x lst =
+    seq {
+        match lst with
+        | [] -> yield [ x ]
+        | head :: tail ->
+            yield x :: lst
+
+            for rest in insertAtEveryPosition x tail do
+                yield head :: rest
+    }
+
+let rec permutations lst =
+    seq {
+        match lst with
+        | [] -> yield []
+        | head :: tail ->
+            for perm in permutations tail do
+                yield! insertAtEveryPosition head perm
+    }

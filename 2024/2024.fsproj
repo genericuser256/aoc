@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="utils/*.fs" />
-    <Compile Include="src/**/*.fs" />
-  <Compile Include="main.fs" />
+    <Compile Include="d*/*.fs" />
+    <Compile Include="main.fs" />
   </ItemGroup>
 </Project>
