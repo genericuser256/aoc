@@ -70,6 +70,17 @@ let rec causesLoop (loc: Loc, direction: Direction, stuffLocs: Set<Loc>, seen: S
     else
         causesLoop (nextLoc, direction, stuffLocs, seen.Add(direction, loc))
 
+
+let rec step (loc: Loc, direction: Direction) =
+    let nextLoc = getNextLoc (loc, direction)
+
+    if stuffLocs.Contains(nextLoc) then
+        step (loc, getNextDirection (direction))
+    else if outOfBounds (nextLoc) then
+        [ loc ]
+    else
+        loc :: step (nextLoc, direction)
+
 let rec findLoops (initialLoc: Loc, initialDirection: Direction) =
     let mutable loc = initialLoc
     let mutable dir = initialDirection
@@ -95,9 +106,15 @@ let rec findLoops (initialLoc: Loc, initialDirection: Direction) =
             loc <- nextLoc
 
     // printfn "%A" paths
-    loopLocations.Count
+    loopLocations
 
-let result = findLoops (guardLoc, Up)
+let result =
+    step (guardLoc, Up)
+    |> Array.ofList
+    |> Array.Parallel.filter (fun loc -> causesLoop (guardLoc, Up, stuffLocs.Add(loc), Set.empty))
+    |> Set.ofArray
 
-// printfn "%A" paths
-printfn "%A" result
+// Not sure why this doesn't work but we can use the less efficient route of starting from the start every time
+// let result' = findLoops (guardLoc, Up)
+// printfn "%A" (Set.difference result result')
+printfn "%A" result.Count
