@@ -2,6 +2,30 @@ module utils
 
 open System.IO
 
+let peek action source =
+    source
+    |> Seq.map (fun x ->
+        action x
+        x)
+
+let splitStringToArray (input: string) = input |> Seq.map string |> Seq.toArray
+
+let interleaveArrays (arr1: 'a[]) (arr2: 'a[]) : 'a[] =
+    let minLength = min (Array.length arr1) (Array.length arr2)
+
+    let interleavedPart =
+        [ for i in 0 .. minLength - 1 do
+              yield arr1.[i]
+              yield arr2.[i] ]
+
+    let remainingPart =
+        if Array.length arr1 > minLength then
+            arr1.[minLength..]
+        else
+            arr2.[minLength..]
+
+    Seq.append interleavedPart remainingPart |> Seq.toArray
+
 let countOccurrences (arr: 'T[]) =
     arr
     |> Seq.groupBy id
