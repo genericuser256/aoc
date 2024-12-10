@@ -41,25 +41,32 @@ let rec combine (idx: int, realIdx: int, file: bool) =
         combine (idx + 1, realIdx + size, true)
 
 
+// printfn "%A" files
+// printfn "%A" emptySpaces
+
 combine (0, 0, true)
 
 // printfn "%A" files
 // printfn "%A" emptySpaces
 
-let printCombinedArray arr =
-    printfn "%A" (String.Join("", arr |> Seq.map (fun x -> if x = -1 then "." else x.ToString()) |> Seq.toArray))
+let diskMap =
+    interleaveArrays
+        (files |> Array.map (fun (id, _, size) -> Array.replicate size (string id)))
+        (emptySpaces |> Array.map (fun (_, size) -> Array.replicate size "."))
+    |> Array.concat
 
-// printCombinedArray (
-//     interleaveArrays (files |> Array.map (fun (id, _, _) -> id)) (emptySpaces |> Array.map (fun _ -> -1))
-// )
+// printfn "%A" (String.Join("", (diskMap)))
+
 
 // let finalFiles =
 
 let findLeftMostSpace (size: int) =
     try
-        emptySpaces |> Seq.findIndex (fun (idx, space) -> space >= size)
+        emptySpaces |> Seq.findIndex (fun (_, space) -> space >= size)
     with _ ->
         -1
+
+// printfn "%A" (String.Join("", (diskMap)))
 
 let orderedFiles =
     files
@@ -69,20 +76,41 @@ let orderedFiles =
 
         if idx <> -1 then
             let (spaceIdx, space) = emptySpaces.[idx]
-            emptySpaces.[idx] <- (spaceIdx + size, space - size)
-            (spaceIdx, id, size)
+
+            if fileIdx > spaceIdx then
+                // printfn "ya %A %A %A %A" fileIdx id size spaceIdx
+                emptySpaces.[idx] <- (spaceIdx + size, space - size)
+
+                for i in 0 .. size - 1 do
+                    diskMap.[spaceIdx + i] <- string id
+
+                (spaceIdx, id, size)
+            else
+                (fileIdx, id, size)
+
         else
+            // printfn "no %A %A %A" fileIdx id size
+
+            for i in 0 .. size - 1 do
+                diskMap.[fileIdx + i] <- string id
+
             (fileIdx, id, size))
     |> Seq.sortBy (fun (idx, _, _) -> idx)
+    |> Seq.toArray
+
+
+// printfn "%A" orderedFiles
+// printfn "%A" (String.Join("", (diskMap)))
+// orderedFiles |> Array.map (fun (_, id, size) -> String.replicate size (string id)) |> int |> Array.iter (fun x -> printfn "%A" x)
 
 let result =
     orderedFiles
     // |> peek (printfn "%A")
-    |> Seq.map (fun (i, id, size) ->
-        // printfn "\n%A %A %A" i id size
+    |> Seq.map (fun (idx, id, size) ->
+        // printfn "\n%A %A %A" idx id size
 
         seq {
-            for x in i .. i + size - 1 do
+            for x in idx .. idx + size - 1 do
                 // printfn "%A %A %A" x id (x * id)
                 (int64 x) * (int64 id)
         }
