@@ -26,6 +26,13 @@ let interleaveArrays (arr1: 'a[]) (arr2: 'a[]) : 'a[] =
 
     Seq.append interleavedPart remainingPart |> Seq.toArray
 
+
+let readSingleLine =
+    let args = fsi.CommandLineArgs
+
+    let lines = args.[1] |> File.ReadAllLines
+    lines.[0]
+
 let countOccurrences (arr: 'T[]) =
     arr
     |> Seq.groupBy id
