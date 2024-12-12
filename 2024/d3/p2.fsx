@@ -1,4 +1,4 @@
-﻿#load "../utils/util.fs"
+﻿#load "../utils/util.fsx"
 
 open System.IO
 open System.Text.RegularExpressions

@@ -5,6 +5,8 @@ open FSharp.Collections
 
 type Multimap<'Key, 'Value when 'Value: comparison> = Dictionary<'Key, Set<'Value>>
 
+let emptyMultimap<'Key, 'Value when 'Key: equality and 'Value: comparison> =
+    Multimap<'Key, 'Value>()
 
 let getValues (multimap: Multimap<'Key, 'Value>) key =
     match multimap.TryGetValue(key) with

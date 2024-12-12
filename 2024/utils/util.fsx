@@ -27,10 +27,17 @@ let interleaveArrays (arr1: 'a[]) (arr2: 'a[]) : 'a[] =
     Seq.append interleavedPart remainingPart |> Seq.toArray
 
 
-let readSingleLine =
+let readAllLines =
     let args = fsi.CommandLineArgs
 
-    let lines = args.[1] |> File.ReadAllLines
+    args.[1] |> File.ReadAllLines
+
+let readAllLinesAsGrid =
+    let lines = readAllLines
+    lines |> Array.map (fun line -> line |> splitStringToArray)
+
+let readSingleLine =
+    let lines = readAllLines
     lines.[0]
 
 let countOccurrences (arr: 'T[]) =
