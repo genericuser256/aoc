@@ -11,13 +11,13 @@ let emptyMultimap<'Key, 'Value when 'Key: equality and 'Value: comparison> =
 let getValues (multimap: Multimap<'Key, 'Value>) key =
     match multimap.TryGetValue(key) with
     | true, values -> values
-    | false, _ -> set []
+    | false, _ -> Set.empty
 
 let addValue (multimap: Multimap<'Key, 'Value>) key value =
     if multimap.ContainsKey(key) then
         multimap.[key] <- multimap.[key].Add(value)
     else
-        multimap.[key] <- Set([ value ])
+        multimap.[key] <- Set[value]
 
 let removeValue (multimap: Multimap<'Key, 'Value>) key value =
     if getValues multimap key |> Set.contains value then

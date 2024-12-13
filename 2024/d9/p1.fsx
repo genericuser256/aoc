@@ -1,5 +1,5 @@
-﻿#load "../utils/util.fs"
-#load "../utils/multimap.fs"
+﻿#load "../utils/util.fsx"
+#load "../utils/multimap.fsx"
 
 open System
 open System.IO

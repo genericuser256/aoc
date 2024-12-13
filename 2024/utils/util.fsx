@@ -65,3 +65,22 @@ let rec permutations lst =
             for perm in permutations tail do
                 yield! insertAtEveryPosition head perm
     }
+
+let printGridWithIndices (grid: 'a[][]) =
+    printf "  "
+
+    for j in 0 .. grid.[0].Length - 1 do
+        printf " %A" (j % 10)
+
+    printfn ""
+
+    for i in 0 .. grid.Length - 1 do
+        printf " %d " i
+
+        for j in 0 .. grid.[i].Length - 1 do
+            match box grid.[i].[j] with
+            | :? string as s -> printf "%s " s
+            | _ -> printf "%A " grid.[i].[j]
+        // printf "%A " grid.[i].[j]
+
+        printfn ""
