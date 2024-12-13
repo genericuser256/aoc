@@ -67,7 +67,7 @@ let perimeter (s: Set<Pos>) =
     |> Seq.map (fun x -> if x = 1 then 0 else x)
     |> Seq.sum
 
-let sides (s: Set<Pos>) =
+let sidesOld (s: Set<Pos>) =
     let initial = s |> Seq.find (fun _ -> true)
 
     let getNext (p: Pos) (dir: Dir) =
@@ -102,7 +102,78 @@ let sides (s: Set<Pos>) =
     // We need to add 1 here to catch the initial side
     followEdge initial Right
 
-// printfn "%A" (sides (set [ (0, 0); (0, 1); (1, 0) ]))
+let bounds (s: Set<Pos>) =
+    let xs = s |> Set.map fst
+    let ys = s |> Set.map snd
+    xs |> Set.minElement, xs |> Set.maxElement, ys |> Set.minElement, ys |> Set.maxElement
+
+
+let getSides (s: Set<Pos>) =
+    let xs = s |> Set.map fst
+    let ys = s |> Set.map snd
+    let minX, maxX, minY, maxY = bounds s
+
+    // printfn "%A" (s |> Seq.find (fun _ -> true) |> at)
+    // printfn "%A %A %A %A" minX maxX minY maxY
+
+    let rec castRayH (p: Pos) (out: bool) =
+        let p' = step p Right
+        let newOut = s.Contains p' |> not
+        // printfn "h %A %A %A %A" p p' out newOut
+
+        if fst p >= maxX then
+            match out = newOut with
+            | true -> Set.empty
+            | false -> set [ ((p, p'), true) ]
+        else
+            match out = newOut with
+            | true -> castRayH p' newOut
+            | false -> (castRayH p' newOut).Add((p, p'), out)
+
+    let rec castRayV (p: Pos) (out: bool) =
+        let p' = step p Down
+        let newOut = s.Contains p' |> not
+        // printfn "v %A %A %A %A" p p' out newOut
+
+        if snd p >= maxY then
+            match out = newOut with
+            | true -> Set.empty
+            | false -> set [ ((p, p'), true) ]
+        else
+            match out = newOut with
+            | true -> castRayV p' newOut
+            | false -> (castRayV p' newOut).Add((p, p'), out)
+
+    let verticalEdges =
+        xs |> Set.map (fun x -> castRayV (x, minY - 1) true) |> Set.unionMany
+
+    let horizontalEdges =
+        ys |> Set.map (fun y -> castRayH (minX - 1, y) true) |> Set.unionMany
+
+    let verticalSides =
+        verticalEdges
+        |> Set.filter (fun ((top, bottom), out) ->
+            let top' = step top Left
+            let bottom' = step bottom Left
+            verticalEdges.Contains((top', bottom'), out) |> not)
+
+    let horizontalSides =
+        horizontalEdges
+        |> Set.filter (fun ((left, right), out) ->
+            let left' = step left Up
+            let right' = step right Up
+            horizontalEdges.Contains((left', right'), out) |> not)
+
+    // printfn "v %A" verticalEdges
+    // printfn "h %A" horizontalEdges
+    // printfn "v %A" verticalSides
+    // printfn "h %A" horizontalSides
+    // printfn "c %A" (verticalSides.Count + horizontalSides.Count)
+
+    verticalSides.Count + horizontalSides.Count
+
+// printfn "AA\nA"
+// printfn "%A" (getSides (set [ (0, 0); (0, 1); (1, 0) ]))
 
 // printGridWithIndices grid
 
@@ -164,6 +235,6 @@ for y in 0 .. grid.Length - 1 do
 // plots
 // |> Seq.iter (fun plot -> printfn "%A: A: %A P: %A" (fst plot) (area (snd plot)) (perimeter (snd plot)))
 
-let result = plots |> Seq.map (fun (v, s) -> sides s * area s) |> Seq.sum
+let result = plots |> Seq.map (fun (v, s) -> getSides s * area s) |> Seq.sum
 
 printfn "%A %A" result (result > 906608)
