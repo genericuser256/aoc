@@ -40,8 +40,8 @@ let readSingleLine =
     let lines = readAllLines
     lines.[0]
 
-let countOccurrences (arr: 'T[]) =
-    arr
+let countOccurrences v =
+    v
     |> Seq.groupBy id
     |> Seq.map (fun (key, values) -> key, Seq.length values)
     |> Map.ofSeq
