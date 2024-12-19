@@ -71,86 +71,122 @@ let step (dir: Dir) (x, y) =
     let dx, dy = dir.toStep ()
     x + dx, y + dy
 
+let getDir (x, y) (x', y') =
+    match (x - x', y - y') with
+    | (1, 0) -> Left
+    | (-1, 0) -> Right
+    | (0, 1) -> Up
+    | (0, -1) -> Down
+    | _ ->
+        printfn "%A %A" (x, y) (x', y')
+        raise (Exception("bad state"))
 
-let add (a: Option<int>) b =
-    match a with
-    | Some(v) -> Some(v + b)
-    | _ -> None
+let inBounds (x, y) =
+    x >= 0 && x <= width && y >= 0 && y <= height
 
-let min (a: Option<int>) (b: Option<int>) =
-    match a, b with
-    | Some(a), Some(b) -> Some(Math.Min(a, b))
-    | Some(a), None -> Some(a)
-    | None, Some(b) -> Some(b)
-    | _ -> None
+let reconstructPath (cameFrom: Map<Pt, Pt>) start =
+    let mutable totalPath = [ start ]
+    let mutable pt = start
 
-let mutable cache = Map.empty
+    while cameFrom.ContainsKey pt do
+        pt <- cameFrom[pt]
+        totalPath <- pt :: totalPath
 
-let inCache key = cache.ContainsKey key
+    totalPath
 
-let addToCache key value =
-    cache <- cache.Add(key, value)
-    value
+let d a b = if a = b then 1 else 1000
 
-let getValue key = (cache.TryFind key).Value
+// A* finds a path from start to goal.
+// h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+let aStar start h =
+    // The set of discovered nodes that may need to be (re-)expanded.
+    // Initially, only the start node is known.
+    // This is usually implemented as a min-heap or priority queue rather than a hash-set.
+    let mutable openSet = set [ (start, Right) ]
+    let addToOpen pt = openSet <- openSet.Add pt
 
-let rec solveMaze pt (dir: Dir) (seen: Set<(Pt * Dir)>) (total: int) : int option =
-    let newSeen = seen.Add(pt, dir)
-    let key = (pt)
+    let removeFromOpen pt =
+        openSet <- openSet |> Seq.find (fun (pt', _) -> pt = pt') |> openSet.Remove
 
-    if inCache key then
-        let value = getValue key
-        addToCache key (min value (Some total))
-    elif pt = exit then
-        printfn "exit %A" total
-        addToCache key (Some total)
-    elif walls.Contains pt || seen.Contains(pt, dir) then
-        None
+    // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
+    // to n currently known.
+    let mutable cameFrom = Map.empty
+
+    let getCameFrom pt = cameFrom.TryFind pt
+
+    let setCameFrom pt v = cameFrom <- cameFrom.Add(pt, v)
+
+    // For node n, gScore[n] is the currently known cost of the cheapest path from start to n.
+    let mutable gScore = Map.empty
+
+    let getGScore pt =
+        match gScore.TryFind pt with
+        | Some(value) -> value
+        | _ -> Int32.MaxValue
+
+    let setGScore pt v = gScore <- gScore.Add(pt, v)
+
+    setGScore start 0
+
+    // For node n, fScore[n] = gScore[n] + h(n). fScore[n] represents our current best guess as to
+    // how cheap a path could be from start to finish if it goes through n.
+    let mutable fScore = Map.empty
+
+    let getFScore pt =
+        match fScore.TryFind pt with
+        | Some(value) -> value
+        | _ -> Int32.MaxValue
+
+    let setFScore pt v = fScore <- fScore.Add(pt, v)
+    setFScore start (h start)
+
+    let mutable result = None
+
+    while not openSet.IsEmpty && result.IsNone do
+        // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
+        let getCurrent () =
+            openSet |> Seq.minBy (fun (pt, _) -> getFScore pt)
+
+        let (current, currentDir) = getCurrent ()
+
+        if current = exit then
+            result <- Some(reconstructPath cameFrom current)
+        else
+            removeFromOpen current
+
+            [ currentDir; currentDir.leftTurn (); currentDir.rightTurn () ]
+            |> Seq.map (fun dir -> (step dir current, dir))
+            |> Seq.filter (fun (pt, _) -> inBounds pt)
+            |> Seq.filter (fun (pt, _) -> walls.Contains pt |> not)
+            |> Seq.iter (fun (neighbour, dir) ->
+                // d(current,neighbour) is the weight of the edge from current to neighbour
+                // tentative_gScore is the distance from start to the neighbour through current
+                let tGScore = (getGScore current) + (d currentDir dir)
+
+                if tGScore < (getGScore neighbour) then
+                    // This path to neighbour is better than any previous one. Record it!
+                    setCameFrom neighbour current
+                    setGScore neighbour tGScore
+                    setFScore neighbour (tGScore + h (neighbour))
+                    addToOpen (neighbour, dir))
+
+    // Open set is empty but goal was never reached
+    if result.IsSome then
+        result.Value
     else
-        let pt' = step dir pt
-        let s = solveMaze pt' dir newSeen (total + 1)
-
-        let lDir = dir.leftTurn ()
-        let lPt = step lDir pt
-        let l = solveMaze pt lDir newSeen (total + 1000)
-
-        let rDir = dir.rightTurn ()
-        let rPt = step rDir pt
-        let r = solveMaze pt rDir newSeen (total + 1000)
-
-        printfn "%A %A %A %A" pt s l r
-        let cost = min (min s l) r
-        addToCache key cost
-
-// let solve () =
-//     let mutable ops = [(start, Right)]
-//     let mutable costMap = Map.ofList [(start, 0)]
-
-//     let addCost pt cost=
-//         costMap.Add pt (
-//             match costMap.TryFind pt with
-//             | Some(value) -> min cost value
-//             | _ -> cost)
-
-//     while not ops.IsEmpty do
-//         let (pt, dir) = ops.Head
-//         ops <- ops.Tail
-//         let cost = costMap.TryFind pt
-
-//         let pt' = step dir pt
-//         ops <- (pt', dir)
-//         addCost pt'
-//         let s = solveMaze pt' dir newSeen (add total 1)
-
-//         let lDir = dir.leftTurn ()
-//         let lPt = step lDir pt
-//         let l = solveMaze lPt lDir newSeen (add total 1000)
-
-//         let rDir = dir.rightTurn ()
-//         let rPt = step rDir pt
-//         let r = solveMaze rPt rDir newSeen (add total 1000)
+        raise (Exception("failed"))
 
 
+let scorePath (path: Pt list) =
+    let rec scorePath' pt dir path =
+        match path with
+        | [] -> 0
+        | head :: tail ->
+            (if head = (step dir pt) then 1 else 1001)
+            + (scorePath' head (getDir pt head) tail)
 
-solveMaze start Right (set []) 0
-printfn "%A" (cache |> Map.toArray |> Array.filter (fun (pt, _) -> pt = exit))
+    scorePath' path.Head Right path.Tail
+
+let path = (aStar start (fun p -> 1))
+// printfn "%A" path
+printfn "%A" (scorePath path)

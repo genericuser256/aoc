@@ -43,252 +43,150 @@ type Dir =
         | Down -> Right
         | Left -> Down
 
-let lines = readAllLines
 
 let parse =
-    let mutable warehouse = true
-    let mutable i = 0
+    let lines = readAllLinesAsGrid
     let mutable walls = []
-    let mutable boxes = []
-    let mutable boxesRight = []
-    let mutable robot = (0, 0)
+    let mutable start = (0, 0)
+    let mutable exit = (0, 0)
 
-    while warehouse do
-        warehouse <- lines.[i].Length > 2
+    for y in 0 .. lines.Length - 1 do
+        for x in 0 .. lines.[0].Length - 1 do
+            match lines.[y].[x] with
+            | "#" -> walls <- (x, y) :: walls
+            | "S" -> start <- (x, y)
+            | "E" -> exit <- (x, y)
+            | _ -> ()
 
-        if warehouse then
-            lines.[i]
-            |> Seq.iteri (fun x v ->
-                match v with
-                | '#' -> walls <- (2 * x, i) :: (2 * x + 1, i) :: walls
-                | 'O' ->
-                    boxes <- (2 * x, i) :: boxes
-                    boxesRight <- (2 * x + 1, i) :: boxesRight
-                | '@' -> robot <- (2 * x, i)
-                | _ -> ())
+    (walls |> Set.ofList), start, exit
 
-            i <- i + 1
-        else
-            i <- i + 1
+let mutable walls, start, exit = parse
 
-    let mutable moves = []
-
-    while i < lines.Length do
-        lines.[i]
-        |> String.iter (fun v ->
-            match v with
-            | '^' -> moves <- Up :: moves
-            | 'v' -> moves <- Down :: moves
-            | '<' -> moves <- Left :: moves
-            | '>' -> moves <- Right :: moves
-            | _ -> raise (Exception(string v)))
-
-        i <- i + 1
-
-    (walls |> Set.ofList), (boxes |> Set.ofList), robot, (moves |> List.rev)
-
-let mutable walls, boxes, robot, moves = parse
-
-// printfn "%A %A %A %A" walls boxes robot moves
+// printfn "%A %A %A" walls start exit
 
 let width = walls |> Seq.map fst |> Seq.max
 let height = walls |> Seq.map snd |> Seq.max
 
-let step ((x, y): Pt) (dir: Dir) =
+let step (dir: Dir) (x, y) =
     let dx, dy = dir.toStep ()
-    (x + dx, y + dy)
+    x + dx, y + dy
 
+let getDir (x, y) (x', y') =
+    match (x - x', y - y') with
+    | (1, 0) -> Left
+    | (-1, 0) -> Right
+    | (0, 1) -> Up
+    | (0, -1) -> Down
+    | _ ->
+        printfn "%A %A" (x, y) (x', y')
+        raise (Exception("bad state"))
 
-let printState () =
-    let grid =
-        (seq {
-            for y in 0..height do
-                yield
-                    seq {
-                        for x in 0..width do
-                            if walls.Contains(x, y) then yield "#"
-                            else if robot = (x, y) then yield "@"
-                            else if boxes.Contains(x, y) then yield "["
-                            else if boxes.Contains(x - 1, y) then yield "]"
-                            else yield "."
-                    }
-                    |> Seq.toArray
-         }
-         |> Seq.toArray)
+let inBounds (x, y) =
+    x >= 0 && x <= width && y >= 0 && y <= height
 
-    printGridWithIndicesNoSpread grid
-    printfn ""
+let reconstructPath (cameFrom: Map<Pt, Pt>) start =
+    let mutable totalPath = [ start ]
+    let mutable pt = start
 
-let validate () =
-    boxes
-    |> Set.iter (fun (x, y) ->
-        if walls.Contains(x, y) then
-            printfn "walls.Contains(x, y) %A" (x, y)
-            raise (Exception("bad state"))
-        else if walls.Contains(x + 1, y) then
-            printfn "walls.Contains(x + 1, y) %A" (x, y)
-            raise (Exception("bad state"))
-        else if robot = (x, y) then
-            printfn "robot = (x, y) %A" (x, y)
-            raise (Exception("bad state"))
-        else if robot = (x + 1, y) then
-            printfn "robot = (x + 1, y) %A" (x, y)
-            raise (Exception("bad state")))
+    while cameFrom.ContainsKey pt do
+        pt <- cameFrom[pt]
+        totalPath <- pt :: totalPath
 
-let rBoxContains pt = boxes.Contains pt
-let lBoxContains pt = boxes.Contains(step pt Left)
+    totalPath
 
-let moveVert (pt: Pt) (dir: Dir) =
+let d a b = if a = b then 1 else 1000
 
-    let getBoxPts (pt: Pt) =
-        if boxes.Contains(pt) then
-            set [ pt; step pt Right ]
-        elif boxes.Contains(step pt Left) then
-            set [ step pt Left; pt ]
+// A* finds a path from start to goal.
+// h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+let aStar start h =
+    // The set of discovered nodes that may need to be (re-)expanded.
+    // Initially, only the start node is known.
+    // This is usually implemented as a min-heap or priority queue rather than a hash-set.
+    let mutable openSet = set [ (start, Right) ]
+    let addToOpen pt = openSet <- openSet.Add pt
+
+    let removeFromOpen pt =
+        openSet <- openSet |> Seq.find (fun (pt', _) -> pt = pt') |> openSet.Remove
+
+    // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from the start
+    // to n currently known.
+    let mutable cameFrom = Map.empty
+
+    let getCameFrom pt = cameFrom.TryFind pt
+
+    let setCameFrom pt v = cameFrom <- cameFrom.Add(pt, v)
+
+    // For node n, gScore[n] is the currently known cost of the cheapest path from start to n.
+    let mutable gScore = Map.empty
+
+    let getGScore pt =
+        match gScore.TryFind pt with
+        | Some(value) -> value
+        | _ -> Int32.MaxValue
+
+    let setGScore pt v = gScore <- gScore.Add(pt, v)
+
+    setGScore start 0
+
+    // For node n, fScore[n] = gScore[n] + h(n). fScore[n] represents our current best guess as to
+    // how cheap a path could be from start to finish if it goes through n.
+    let mutable fScore = Map.empty
+
+    let getFScore pt =
+        match fScore.TryFind pt with
+        | Some(value) -> value
+        | _ -> Int32.MaxValue
+
+    let setFScore pt v = fScore <- fScore.Add(pt, v)
+    setFScore start (h start)
+
+    let mutable result = None
+
+    while not openSet.IsEmpty && result.IsNone do
+        // This operation can occur in O(Log(N)) time if openSet is a min-heap or a priority queue
+        let getCurrent () =
+            openSet |> Seq.minBy (fun (pt, _) -> getFScore pt)
+
+        let (current, currentDir) = getCurrent ()
+
+        if current = exit then
+            result <- Some(reconstructPath cameFrom current)
         else
-            set []
+            removeFromOpen current
 
-    let boxesContains (pt: Pt) =
-        if boxes.Contains(pt) then Some(pt)
-        elif boxes.Contains(step pt Left) then Some(step pt Left)
-        else None
+            [ currentDir; currentDir.leftTurn (); currentDir.rightTurn () ]
+            |> Seq.map (fun dir -> (step dir current, dir))
+            |> Seq.filter (fun (pt, _) -> inBounds pt)
+            |> Seq.filter (fun (pt, _) -> walls.Contains pt |> not)
+            |> Seq.iter (fun (neighbour, dir) ->
+                // d(current,neighbour) is the weight of the edge from current to neighbour
+                // tentative_gScore is the distance from start to the neighbour through current
+                let tGScore = (getGScore current) + (d currentDir dir)
 
-    let anyIntersections pts =
-        (pts |> Seq.tryPick boxesContains).IsSome
+                if tGScore < (getGScore neighbour) then
+                    // This path to neighbour is better than any previous one. Record it!
+                    setCameFrom neighbour current
+                    setGScore neighbour tGScore
+                    setFScore neighbour (tGScore + h (neighbour))
+                    addToOpen (neighbour, dir))
 
-    let pt' = step pt dir
-    let mutable pts = set [ pt' ]
-    let mutable movedBox = false
-
-    while anyIntersections pts do
-        movedBox <- true
-
-        printfn "moving boxes %A" pts
-        pts <- pts |> Set.map getBoxPts |> Set.unionMany |> Set.map (fun pt -> step pt dir)
-
-    if pts |> Seq.exists walls.Contains then
-        printfn "pushed into wall"
-        pt
-    else if movedBox then
-        printfn "\nmoved box %A" pts
-        pts <- set [ pt' ]
-        let mutable newBoxes = set []
-
-        while anyIntersections pts do
-
-            printfn "moving boxes %A" pts
-
-            let pts' =
-                pts |> Set.map getBoxPts |> Set.unionMany |> Set.map (fun pt -> step pt dir)
-
-            for p in pts do
-                let boxPt = boxesContains p
-
-                if boxPt.IsSome then
-                    newBoxes <- newBoxes.Add(step boxPt.Value dir)
-                    boxes <- boxes.Remove boxPt.Value
-
-            pts <- pts'
-
-        printfn "new pts %A" pts
-
-        boxes <- boxes |> Set.union newBoxes
-
-        pt'
+    // Open set is empty but goal was never reached
+    if result.IsSome then
+        result.Value
     else
-        printfn "empty"
-        pt'
-
-let moveRight (pt: Pt) (dir: Dir) =
-    let mutable pt' = step pt dir
-    let initialMove = pt'
-
-    while boxes.Contains(pt') do
-        printfn "moving boxes %A" pt'
-        pt' <- step (step pt' dir) dir
-
-    if walls.Contains(pt') then
-        printfn "pushed into wall"
-        pt
-    else if boxes.Contains(initialMove) then
-        printfn "moved box %A %A" pt' (initialMove)
-        pt' <- initialMove
-        let mutable newBoxes = set []
-
-        while boxes.Contains(pt') do
-            printfn "moving boxes %A" pt'
-            boxes <- boxes.Remove pt'
-            newBoxes <- newBoxes.Add(step pt' dir)
-            pt' <- step (step pt' dir) dir
-
-        boxes <- boxes |> Set.union newBoxes
-        initialMove
-    else
-        printfn "empty"
-        pt'
-
-let moveLeft (pt: Pt) (dir: Dir) =
-    let boxesContains pt = boxes.Contains(step pt dir)
-
-    let mutable pt' = step pt dir
-    let initialMove = pt'
-    let mutable pushedBox = false
-
-    while boxesContains pt' do
-        pushedBox <- true
-        printfn "l %A next %A bc %A %A" pt' (step pt' dir) (step (step pt' dir) dir) (boxesContains (step pt' dir))
-        pt' <- step (step pt' dir) dir
-
-    printfn "pt' %A" pt'
-
-    if
-        (pushedBox && walls.Contains(step pt' Left))
-        || (not pushedBox && walls.Contains(initialMove))
-    then
-        printfn "pushed into wall"
-        pt
-    else if pushedBox then
-        printfn "moved box %A %A" pt' (initialMove)
-        pt' <- initialMove
-        let mutable newBoxes = set []
-
-        while boxesContains pt' do
-            printfn "moving boxes %A" pt'
-            let boxPt = step pt' dir
-            boxes <- boxes.Remove boxPt
-            newBoxes <- newBoxes.Add(step boxPt dir)
-            pt' <- step boxPt dir
-
-        boxes <- boxes |> Set.union newBoxes
-        initialMove
-    else
-        printfn "empty"
-        pt'
-
-let move (pt: Pt) (dir: Dir) =
-    printfn "move %A -> %A, dir: %A " pt (step pt dir) dir
-    // printState ()
-
-    if dir = Up || dir = Down then moveVert pt dir
-    else if dir = Right then moveRight pt dir
-    else moveLeft pt dir
-
-printState ()
-
-validate ()
-
-for dir in moves do
-    robot <- move robot dir
-    printfn "\nnew state"
-    printState ()
-    validate ()
-
-// printState ()
-
-let halfWidth = width / 2
-
-let getGps (x, y) =
-    if x < halfWidth then x + y * 100 else x + 1 + y * 100
+        raise (Exception("failed"))
 
 
-boxes |> Seq.sumBy getGps |> printfn "%A"
+let scorePath (path: Pt list) =
+    let rec scorePath' pt dir path =
+        match path with
+        | [] -> 0
+        | head :: tail ->
+            (if head = (step dir pt) then 1 else 1001)
+            + (scorePath' head (getDir pt head) tail)
+
+    scorePath' path.Head Right path.Tail
+
+let path = (aStar start (fun p -> 1))
+printfn "%A" path
+printfn "%A" (scorePath path)
